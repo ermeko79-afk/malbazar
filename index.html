@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Мал Базар — скот напрямую</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+
+  :root {
+    --tg-bg: #ffffff;
+    --tg-text: #1a1a2e;
+    --tg-hint: #8a8a9a;
+    --tg-link: #2563eb;
+    --tg-btn: #2563eb;
+    --tg-btn-text: #ffffff;
+    --tg-secondary: #f4f6fb;
+    --tg-border: #e5e9f2;
+    --green: #16a34a;
+    --green-light: #dcfce7;
+    --amber: #d97706;
+    --amber-light: #fef3c7;
+    --red: #dc2626;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--tg-bg);
+    color: var(--tg-text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  .nav {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--tg-bg);
+    border-bottom: 1px solid var(--tg-border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px;
+  }
+  .nav-logo { font-size: 18px; font-weight: 800; color: var(--tg-btn); display: flex; align-items: center; gap: 6px; }
+  .nav-logo span { font-size: 22px; }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab {
+    font-size: 12px; font-weight: 700; padding: 6px 12px;
+    border-radius: 20px; border: none; cursor: pointer;
+    background: transparent; color: var(--tg-hint); transition: all .2s;
+  }
+  .nav-tab.active { background: var(--tg-btn); color: #fff; }
+
+  /* PAGES */
+  .page { display: none; padding: 16px; }
+  .page.active { display: block; }
+
+  /* CATALOG PAGE */
+  .filters {
+    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px;
+    scrollbar-width: none;
+  }
+  .filters::-webkit-scrollbar { display: none; }
+  .filter-btn {
+    flex-shrink: 0; font-size: 12px; font-weight: 700;
+    padding: 6px 14px; border-radius: 20px;
+    border: 1.5px solid var(--tg-border);
+    background: var(--tg-bg); color: var(--tg-hint);
+    cursor: pointer; transition: all .2s; font-family: 'Nunito', sans-serif;
+  }
+  .filter-btn.active { border-color: var(--tg-btn); background: var(--tg-btn); color: #fff; }
+
+  .search-bar {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--tg-secondary); border-radius: 12px;
+    padding: 10px 14px; margin-bottom: 16px;
+  }
+  .search-bar input {
+    border: none; background: transparent; font-family: 'Nunito', sans-serif;
+    font-size: 14px; color: var(--tg-text); flex: 1; outline: none;
+  }
+  .search-bar input::placeholder { color: var(--tg-hint); }
+
+  .listings { display: flex; flex-direction: column; gap: 12px; }
+
+  .card {
+    background: var(--tg-bg); border: 1px solid var(--tg-border);
+    border-radius: 16px; overflow: hidden; box-shadow: var(--shadow);
+    transition: transform .15s;
+  }
+  .card:active { transform: scale(0.98); }
+
+  .card-img {
+    width: 100%; height: 180px; object-fit: cover;
+    background: linear-gradient(135deg, #e8f4fd, #d1fae5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 60px; position: relative;
+  }
+  .card-badge {
+    position: absolute; top: 10px; right: 10px;
+    font-size: 11px; font-weight: 700; padding: 4px 10px;
+    border-radius: 20px; background: rgba(255,255,255,0.95);
+    color: var(--green);
+  }
+  .card-body { padding: 14px; }
+  .card-title { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+  .card-meta { font-size: 12px; color: var(--tg-hint); margin-bottom: 10px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .card-meta span { display: flex; align-items: center; gap: 3px; }
+  .card-price { font-size: 20px; font-weight: 800; color: var(--tg-btn); margin-bottom: 12px; }
+  .card-price small { font-size: 13px; color: var(--tg-hint); font-weight: 600; }
+  .card-footer { display: flex; gap: 8px; }
+  .btn-call {
+    flex: 1; padding: 10px; border-radius: 12px;
+    border: none; cursor: pointer; font-family: 'Nunito', sans-serif;
+    font-size: 13px; font-weight: 700; transition: all .2s;
+    background: var(--tg-btn); color: #fff;
+  }
+  .btn-call:active { opacity: 0.85; }
+  .btn-share {
+    padding: 10px 14px; border-radius: 12px;
+    border: 1.5px solid var(--tg-border); background: transparent;
+    cursor: pointer; font-size: 16px; transition: all .2s;
+  }
+
+  /* FORM PAGE */
+  .form-header {
+    text-align: center; padding: 10px 0 20px;
+  }
+  .form-header h2 { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+  .form-header p { font-size: 13px; color: var(--tg-hint); }
+
+  .form-section { margin-bottom: 20px; }
+  .form-section-title {
+    font-size: 11px; font-weight: 800; color: var(--tg-hint);
+    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px;
+  }
+
+  .field { margin-bottom: 12px; }
+  .field label { font-size: 13px; font-weight: 700; display: block; margin-bottom: 5px; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 12px 14px;
+    border: 1.5px solid var(--tg-border); border-radius: 12px;
+    font-family: 'Nunito', sans-serif; font-size: 14px;
+    color: var(--tg-text); background: var(--tg-bg);
+    outline: none; transition: border-color .2s;
+    -webkit-appearance: none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--tg-btn);
+  }
+  .field textarea { resize: none; height: 80px; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .photo-upload {
+    border: 2px dashed var(--tg-border); border-radius: 12px;
+    padding: 24px; text-align: center; cursor: pointer;
+    transition: border-color .2s; position: relative;
+  }
+  .photo-upload:hover { border-color: var(--tg-btn); }
+  .photo-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+  .photo-upload-icon { font-size: 32px; margin-bottom: 6px; }
+  .photo-upload-text { font-size: 13px; color: var(--tg-hint); font-weight: 600; }
+  .photo-preview { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .photo-preview img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; }
+
+  .breed-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .breed-btn {
+    padding: 10px 6px; border-radius: 12px; border: 1.5px solid var(--tg-border);
+    background: var(--tg-bg); cursor: pointer; text-align: center;
+    font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 700;
+    color: var(--tg-hint); transition: all .2s;
+  }
+  .breed-btn.active { border-color: var(--tg-btn); background: #eff6ff; color: var(--tg-btn); }
+  .breed-btn-icon { font-size: 20px; display: block; margin-bottom: 3px; }
+
+  .region-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .region-btn {
+    padding: 10px; border-radius: 12px; border: 1.5px solid var(--tg-border);
+    background: var(--tg-bg); cursor: pointer; text-align: left;
+    font-family: 'Nunito', sans-serif; font-size: 12px; font-weight: 700;
+    color: var(--tg-hint); transition: all .2s;
+  }
+  .region-btn.active { border-color: var(--tg-btn); background: #eff6ff; color: var(--tg-btn); }
+
+  .submit-btn {
+    width: 100%; padding: 16px; border-radius: 16px; border: none;
+    background: var(--tg-btn); color: #fff; font-family: 'Nunito', sans-serif;
+    font-size: 16px; font-weight: 800; cursor: pointer; transition: all .2s;
+    margin-top: 8px;
+  }
+  .submit-btn:active { opacity: 0.85; transform: scale(0.99); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* SUCCESS */
+  .success-screen {
+    display: none; text-align: center; padding: 40px 20px;
+  }
+  .success-screen.show { display: block; }
+  .success-icon { font-size: 64px; margin-bottom: 16px; }
+  .success-screen h2 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+  .success-screen p { font-size: 14px; color: var(--tg-hint); margin-bottom: 24px; }
+  .success-btn {
+    padding: 14px 28px; border-radius: 14px; border: none;
+    background: var(--tg-btn); color: #fff; font-family: 'Nunito', sans-serif;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+  }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 48px 20px; color: var(--tg-hint); }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty p { font-size: 14px; font-weight: 600; }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 40px; color: var(--tg-hint); font-size: 14px; }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--tg-border);
+    border-top-color: var(--tg-btn); border-radius: 50%;
+    animation: spin .7s linear infinite; margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .stats-bar {
+    display: flex; gap: 8px; margin-bottom: 16px;
+  }
+  .stat-chip {
+    flex: 1; background: var(--tg-secondary); border-radius: 10px;
+    padding: 8px; text-align: center;
+  }
+  .stat-chip-val { font-size: 18px; font-weight: 800; color: var(--tg-btn); }
+  .stat-chip-label { font-size: 10px; color: var(--tg-hint); font-weight: 700; margin-top: 2px; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: #1a1a2e; color: #fff; padding: 12px 20px;
+    border-radius: 30px; font-size: 13px; font-weight: 700;
+    transition: transform .3s; z-index: 999; white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-logo"><span>🐑</span> Мал Базар</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('catalog')">Каталог</button>
+    <button class="nav-tab" onclick="showPage('add')">+ Продать</button>
+  </div>
+</div>
+
+<!-- CATALOG PAGE -->
+<div class="page active" id="page-catalog">
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat-chip"><div class="stat-chip-val" id="stat-total">—</div><div class="stat-chip-label">объявлений</div></div>
+    <div class="stat-chip"><div class="stat-chip-val" id="stat-regions">—</div><div class="stat-chip-label">регионов</div></div>
+    <div class="stat-chip"><div class="stat-chip-val" id="stat-today">—</div><div class="stat-chip-label">сегодня</div></div>
+  </div>
+
+  <div class="search-bar">
+    <span>🔍</span>
+    <input type="text" placeholder="Порода, район, цена..." id="search-input" oninput="filterListings()">
+  </div>
+
+  <div class="filters" id="filters">
+    <button class="filter-btn active" onclick="setFilter('all', this)">Все</button>
+    <button class="filter-btn" onclick="setFilter('Гиссар', this)">Гиссар</button>
+    <button class="filter-btn" onclick="setFilter('Арашан', this)">Арашан</button>
+    <button class="filter-btn" onclick="setFilter('Романов', this)">Романов</button>
+    <button class="filter-btn" onclick="setFilter('Меринос', this)">Меринос</button>
+    <button class="filter-btn" onclick="setFilter('Коза', this)">Коза</button>
+    <button class="filter-btn" onclick="setFilter('Корова', this)">Корова</button>
+    <button class="filter-btn" onclick="setFilter('Лошадь', this)">Лошадь</button>
+  </div>
+
+  <div id="listings-container">
+    <div class="loading"><div class="spinner"></div>Загружаем объявления...</div>
+  </div>
+</div>
+
+<!-- ADD PAGE -->
+<div class="page" id="page-add">
+  <div id="form-container">
+    <div class="form-header">
+      <h2>Продать скот</h2>
+      <p>Заполни форму — объявление появится сразу</p>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Вид животного</div>
+      <div class="breed-grid">
+        <button class="breed-btn" onclick="selectBreed('Гиссар', this)"><span class="breed-btn-icon">🐑</span>Гиссар</button>
+        <button class="breed-btn" onclick="selectBreed('Арашан', this)"><span class="breed-btn-icon">🐑</span>Арашан</button>
+        <button class="breed-btn" onclick="selectBreed('Романов', this)"><span class="breed-btn-icon">🐑</span>Романов</button>
+        <button class="breed-btn" onclick="selectBreed('Меринос', this)"><span class="breed-btn-icon">🐑</span>Меринос</button>
+        <button class="breed-btn" onclick="selectBreed('Коза', this)"><span class="breed-btn-icon">🐐</span>Коза</button>
+        <button class="breed-btn" onclick="selectBreed('Корова', this)"><span class="breed-btn-icon">🐄</span>Корова</button>
+        <button class="breed-btn" onclick="selectBreed('Лошадь', this)"><span class="breed-btn-icon">🐎</span>Лошадь</button>
+        <button class="breed-btn" onclick="selectBreed('Другое', this)"><span class="breed-btn-icon">🐾</span>Другое</button>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Детали</div>
+      <div class="field-row">
+        <div class="field">
+          <label>Вес (кг)</label>
+          <input type="number" id="f-weight" placeholder="65" min="1" max="999">
+        </div>
+        <div class="field">
+          <label>Возраст</label>
+          <input type="text" id="f-age" placeholder="2 года">
+        </div>
+      </div>
+      <div class="field">
+        <label>Цена (сом)</label>
+        <input type="number" id="f-price" placeholder="18000" min="1">
+      </div>
+      <div class="field">
+        <label>Описание (необязательно)</label>
+        <textarea id="f-desc" placeholder="Хорошее здоровье, откормленный..."></textarea>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Регион</div>
+      <div class="region-grid">
+        <button class="region-btn" onclick="selectRegion('Ош', this)">📍 Ош</button>
+        <button class="region-btn" onclick="selectRegion('Бишкек', this)">📍 Бишкек</button>
+        <button class="region-btn" onclick="selectRegion('Джалал-Абад', this)">📍 Джалал-Абад</button>
+        <button class="region-btn" onclick="selectRegion('Нарын', this)">📍 Нарын</button>
+        <button class="region-btn" onclick="selectRegion('Иссык-Куль', this)">📍 Иссык-Куль</button>
+        <button class="region-btn" onclick="selectRegion('Чуй', this)">📍 Чуй</button>
+        <button class="region-btn" onclick="selectRegion('Талас', this)">📍 Талас</button>
+        <button class="region-btn" onclick="selectRegion('Баткен', this)">📍 Баткен</button>
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label>Район/село</label>
+        <input type="text" id="f-district" placeholder="Узген, Кара-Суу...">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Контакт</div>
+      <div class="field">
+        <label>Ваше имя</label>
+        <input type="text" id="f-name" placeholder="Эрмек">
+      </div>
+      <div class="field">
+        <label>Номер телефона</label>
+        <input type="tel" id="f-phone" placeholder="+996 700 123 456">
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-section-title">Фото (необязательно)</div>
+      <div class="photo-upload" id="photo-upload-area">
+        <input type="file" accept="image/*" multiple onchange="handlePhotos(this)">
+        <div class="photo-upload-icon">📷</div>
+        <div class="photo-upload-text">Нажми чтобы добавить фото</div>
+      </div>
+      <div class="photo-preview" id="photo-preview"></div>
+    </div>
+
+    <button class="submit-btn" id="submit-btn" onclick="submitListing()">
+      Опубликовать объявление 🚀
+    </button>
+    <div style="height:24px"></div>
+  </div>
+
+  <div class="success-screen" id="success-screen">
+    <div class="success-icon">🎉</div>
+    <h2>Объявление опубликовано!</h2>
+    <p>Оно уже видно всем покупателям в каталоге и в канале @mal_bazar11</p>
+    <button class="success-btn" onclick="backToForm()">Добавить ещё</button>
+    <br><br>
+    <button class="success-btn" style="background:var(--tg-secondary);color:var(--tg-text);" onclick="showPage('catalog')">Смотреть каталог</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// =============================================
+// КОНФИГУРАЦИЯ — замени на свои данные
+// =============================================
+const SHEET_ID = '1RR9na3JYMZLxu_pbkgmFT6QK7Y1zRN9TWtNr-U_6t-I';
+const SHEET_NAME = 'Лист1';
+// Google Apps Script Web App URL — создадим на следующем шаге
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby5BhCsoW7o1GufvpQigGGrc9HwH-81QoXO42udsmWpzFGQrE-IPDBzhw3vRWMzFAnB/exec';
+// =============================================
+
+let allListings = [];
+let activeFilter = 'all';
+let selectedBreed = '';
+let selectedRegion = '';
+
+// Telegram WebApp init
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) {
+  tg.ready();
+  tg.expand();
+}
+
+// ---- NAVIGATION ----
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const tabs = document.querySelectorAll('.nav-tab');
+  if (page === 'catalog') tabs[0].classList.add('active');
+  else tabs[1].classList.add('active');
+  if (page === 'catalog') loadListings();
+}
+
+// ---- CATALOG ----
+async function loadListings() {
+  const container = document.getElementById('listings-container');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div>Загружаем объявления...</div>';
+
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
+    const res = await fetch(url);
+    const text = await res.text();
+    const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*?)\);/)[1]);
+    const rows = json.table.rows || [];
+
+    allListings = rows.map((row, i) => ({
+      id: i,
+      name: getCellVal(row, 0),
+      region: getCellVal(row, 1),
+      breed: getCellVal(row, 2),
+      weight: getCellVal(row, 3),
+      price: getCellVal(row, 4),
+      phone: getCellVal(row, 5),
+      photo: getCellVal(row, 6),
+      date: getCellVal(row, 7),
+      age: getCellVal(row, 8),
+      desc: getCellVal(row, 9),
+    })).filter(r => r.breed || r.name);
+
+    updateStats();
+    renderListings();
+  } catch(e) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><p>Объявлений пока нет.<br>Будь первым — добавь скот!</p></div>`;
+    document.getElementById('stat-total').textContent = '0';
+    document.getElementById('stat-regions').textContent = '0';
+    document.getElementById('stat-today').textContent = '0';
+  }
+}
+
+function getCellVal(row, idx) {
+  try { return row.c[idx] && row.c[idx].v !== null ? String(row.c[idx].v) : ''; }
+  catch { return ''; }
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = allListings.length;
+  const regions = new Set(allListings.map(l => l.region).filter(Boolean));
+  document.getElementById('stat-regions').textContent = regions.size;
+  const today = new Date().toLocaleDateString('ru-RU');
+  const todayCount = allListings.filter(l => l.date && l.date.includes(today.split('.')[0])).length;
+  document.getElementById('stat-today').textContent = todayCount || allListings.length > 0 ? allListings.length : '0';
+}
+
+function setFilter(val, btn) {
+  activeFilter = val;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderListings();
+}
+
+function filterListings() { renderListings(); }
+
+function renderListings() {
+  const container = document.getElementById('listings-container');
+  const search = document.getElementById('search-input').value.toLowerCase();
+
+  let filtered = allListings.filter(l => {
+    const matchFilter = activeFilter === 'all' || (l.breed && l.breed.toLowerCase().includes(activeFilter.toLowerCase()));
+    const matchSearch = !search || 
+      (l.breed && l.breed.toLowerCase().includes(search)) ||
+      (l.region && l.region.toLowerCase().includes(search)) ||
+      (l.name && l.name.toLowerCase().includes(search)) ||
+      (l.price && l.price.includes(search));
+    return matchFilter && matchSearch;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><p>Ничего не найдено.<br>Попробуй другой фильтр</p></div>`;
+    return;
+  }
+
+  const animalEmoji = {
+    'Гиссар': '🐑', 'Арашан': '🐑', 'Романов': '🐑', 'Меринос': '🐑',
+    'Коза': '🐐', 'Корова': '🐄', 'Лошадь': '🐎'
+  };
+
+  container.innerHTML = filtered.map(l => `
+    <div class="card">
+      <div class="card-img">
+        ${l.photo ? `<img src="${l.photo}" style="width:100%;height:100%;object-fit:cover;">` : `<span style="font-size:64px">${animalEmoji[l.breed] || '🐾'}</span>`}
+        <div class="card-badge">✓ Прямой контакт</div>
+      </div>
+      <div class="card-body">
+        <div class="card-title">${l.breed || 'Животное'} ${l.age ? '· ' + l.age : ''}</div>
+        <div class="card-meta">
+          ${l.region ? `<span>📍 ${l.region}${l.district ? ', ' + l.district : ''}</span>` : ''}
+          ${l.weight ? `<span>⚖️ ${l.weight} кг</span>` : ''}
+          ${l.name ? `<span>👤 ${l.name}</span>` : ''}
+        </div>
+        <div class="card-price">${l.price ? Number(l.price).toLocaleString('ru-RU') + ' сом' : 'Цена договорная'} <small>/ голова</small></div>
+        <div class="card-footer">
+          <button class="btn-call" onclick="callFarmer('${l.phone}', '${l.name}')">📞 Позвонить фермеру</button>
+          <button class="btn-share" onclick="shareCard('${l.breed}', '${l.price}', '${l.region}')">↗</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function callFarmer(phone, name) {
+  if (!phone) { showToast('Номер не указан'); return; }
+  const clean = phone.replace(/\s/g, '');
+  window.location.href = 'tel:' + clean;
+}
+
+function shareCard(breed, price, region) {
+  const text = `🐑 ${breed} — ${Number(price).toLocaleString('ru-RU')} сом\n📍 ${region}\n\nНайдено на @mal_bazar11`;
+  if (tg) tg.switchInlineQuery(text);
+  else { navigator.clipboard && navigator.clipboard.writeText(text); showToast('Скопировано!'); }
+}
+
+// ---- ADD FORM ----
+function selectBreed(breed, btn) {
+  selectedBreed = breed;
+  document.querySelectorAll('.breed-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function selectRegion(region, btn) {
+  selectedRegion = region;
+  document.querySelectorAll('.region-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function handlePhotos(input) {
+  const preview = document.getElementById('photo-preview');
+  preview.innerHTML = '';
+  Array.from(input.files).slice(0, 3).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      preview.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function submitListing() {
+  const weight = document.getElementById('f-weight').value;
+  const price = document.getElementById('f-price').value;
+  const name = document.getElementById('f-name').value;
+  const phone = document.getElementById('f-phone').value;
+  const district = document.getElementById('f-district').value;
+  const age = document.getElementById('f-age').value;
+  const desc = document.getElementById('f-desc').value;
+
+  if (!selectedBreed) { showToast('Выбери вид животного'); return; }
+  if (!price) { showToast('Укажи цену'); return; }
+  if (!selectedRegion) { showToast('Выбери регион'); return; }
+  if (!name) { showToast('Укажи своё имя'); return; }
+  if (!phone) { showToast('Укажи телефон'); return; }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Публикуем...';
+
+  const data = {
+    name, region: selectedRegion, breed: selectedBreed,
+    weight, price, phone,
+    photo: '',
+    date: new Date().toLocaleDateString('ru-RU'),
+    age, desc, district
+  };
+
+  try {
+    if (APPS_SCRIPT_URL !== 'ВСТАВЬ_СЮДА_URL_APPS_SCRIPT') {
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    }
+    document.getElementById('form-container').style.display = 'none';
+    document.getElementById('success-screen').classList.add('show');
+  } catch(e) {
+    showToast('Ошибка. Попробуй ещё раз.');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Опубликовать объявление 🚀';
+}
+
+function backToForm() {
+  document.getElementById('form-container').style.display = 'block';
+  document.getElementById('success-screen').classList.remove('show');
+  selectedBreed = ''; selectedRegion = '';
+  document.querySelectorAll('.breed-btn, .region-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('f-weight').value = '';
+  document.getElementById('f-price').value = '';
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-phone').value = '';
+  document.getElementById('f-district').value = '';
+  document.getElementById('f-age').value = '';
+  document.getElementById('f-desc').value = '';
+  document.getElementById('photo-preview').innerHTML = '';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Load on start
+loadListings();
+</script>
+</body>
+</html>
