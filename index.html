@@ -389,7 +389,7 @@
 const SHEET_ID = '1RR9na3JYMZLxu_pbkgmFT6QK7Y1zRN9TWtNr-U_6t-I';
 const SHEET_NAME = 'Лист1';
 // Google Apps Script Web App URL — создадим на следующем шаге
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby5BhCsoW7o1GufvpQigGGrc9HwH-81QoXO42udsmWpzFGQrE-IPDBzhw3vRWMzFAnB/exec';
+const APPS_SCRIPT_URL = 'ВСТАВЬ_СЮДА_URL_APPS_SCRIPT';
 // =============================================
 
 let allListings = [];
@@ -589,12 +589,9 @@ async function submitListing() {
 
   try {
     if (APPS_SCRIPT_URL !== 'ВСТАВЬ_СЮДА_URL_APPS_SCRIPT') {
-      await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
+      const params = new URLSearchParams(data);
+      const url = APPS_SCRIPT_URL + '?' + params.toString();
+      await fetch(url, { method: 'GET', mode: 'no-cors' });
     }
     document.getElementById('form-container').style.display = 'none';
     document.getElementById('success-screen').classList.add('show');
