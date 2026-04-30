@@ -592,8 +592,6 @@ async function submitListing() {
     Object.keys(data).forEach(k => params.append(k, data[k]));
     const url = APPS_SCRIPT_URL + '?' + params.toString();
 
-    try { await fetch(url, { mode: 'no-cors' }); } catch(e1) {}
-
     await new Promise((resolve) => {
       const img = new Image();
       img.onload = img.onerror = resolve;
