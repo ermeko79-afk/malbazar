@@ -560,7 +560,11 @@ function handlePhotos(input) {
   });
 }
 
+let isSubmitting = false;
+
 async function submitListing() {
+  if (isSubmitting) return;
+  
   const weight = document.getElementById('f-weight').value;
   const price = document.getElementById('f-price').value;
   const name = document.getElementById('f-name').value;
@@ -575,6 +579,7 @@ async function submitListing() {
   if (!name) { showToast('Укажи своё имя'); return; }
   if (!phone) { showToast('Укажи телефон'); return; }
 
+  isSubmitting = true;
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
   btn.textContent = 'Публикуем...';
@@ -587,29 +592,24 @@ async function submitListing() {
     age, desc, district
   };
 
-  try {
-    const params = new URLSearchParams();
-    Object.keys(data).forEach(k => params.append(k, data[k]));
-    const url = APPS_SCRIPT_URL + '?' + params.toString();
+  const params = new URLSearchParams();
+  Object.keys(data).forEach(k => params.append(k, data[k]));
+  const url = APPS_SCRIPT_URL + '?' + params.toString();
 
-    await new Promise((resolve) => {
-      const img = new Image();
-      img.onload = img.onerror = resolve;
-      img.src = url;
-      setTimeout(resolve, 2000);
-    });
-
-    document.getElementById('form-container').style.display = 'none';
-    document.getElementById('success-screen').classList.add('show');
-  } catch(e) {
-    document.getElementById('form-container').style.display = 'none';
-    document.getElementById('success-screen').classList.add('show');
-  }
+  await new Promise((resolve) => {
+    const img = new Image();
+    img.onload = img.onerror = resolve;
+    img.src = url;
+    setTimeout(resolve, 2000);
+  });
 
   btn.disabled = false;
   btn.textContent = 'Опубликовать объявление 🚀';
-}
+  isSubmitting = false;
 
+  document.getElementById('form-container').style.display = 'none';
+  document.getElementById('success-screen').classList.add('show');
+}
 function backToForm() {
   document.getElementById('form-container').style.display = 'block';
   document.getElementById('success-screen').classList.remove('show');
