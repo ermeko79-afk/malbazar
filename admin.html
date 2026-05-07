@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мал Базар — Админка</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito', sans-serif; background: #f4f6fb; color: #1a1a2e; min-height: 100vh; }
+
+  /* LOGIN */
+  .login-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+  }
+  .login-box {
+    background: #fff; border-radius: 20px; padding: 40px 32px;
+    width: 100%; max-width: 380px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .login-logo { font-size: 48px; margin-bottom: 12px; }
+  .login-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+  .login-sub { font-size: 13px; color: #888; margin-bottom: 28px; }
+  .login-input {
+    width: 100%; padding: 14px 16px; border: 2px solid #e5e9f2; border-radius: 12px;
+    font-family: 'Nunito', sans-serif; font-size: 15px; outline: none; margin-bottom: 14px;
+    transition: border-color .2s;
+  }
+  .login-input:focus { border-color: #2563eb; }
+  .login-btn {
+    width: 100%; padding: 14px; border-radius: 12px; border: none;
+    background: #2563eb; color: #fff; font-family: 'Nunito', sans-serif;
+    font-size: 15px; font-weight: 800; cursor: pointer; transition: opacity .2s;
+  }
+  .login-btn:hover { opacity: 0.9; }
+  .login-error { color: #dc2626; font-size: 13px; margin-top: 10px; display: none; }
+
+  /* ADMIN PANEL */
+  .admin-panel { display: none; }
+  .topbar {
+    background: #1a1a2e; color: #fff; padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .topbar-logo { font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+  .topbar-badge { background: #dc2626; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 800; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .topbar-btn {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: #fff; padding: 6px 14px; border-radius: 8px; font-size: 12px;
+    font-family: 'Nunito', sans-serif; font-weight: 700; cursor: pointer;
+  }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: #fff; border-radius: 14px; padding: 16px 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .stat-val { font-size: 28px; font-weight: 800; color: #2563eb; }
+  .stat-label { font-size: 12px; color: #888; font-weight: 700; margin-top: 2px; }
+
+  /* FILTERS */
+  .filter-bar {
+    background: #fff; border-radius: 14px; padding: 16px 18px;
+    margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;
+    align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .filter-bar input, .filter-bar select {
+    padding: 8px 14px; border: 1.5px solid #e5e9f2; border-radius: 10px;
+    font-family: 'Nunito', sans-serif; font-size: 13px; outline: none;
+    transition: border-color .2s;
+  }
+  .filter-bar input:focus, .filter-bar select:focus { border-color: #2563eb; }
+  .filter-bar input { flex: 1; min-width: 180px; }
+  .refresh-btn {
+    padding: 8px 16px; border-radius: 10px; border: none;
+    background: #2563eb; color: #fff; font-family: 'Nunito', sans-serif;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+
+  /* TABLE */
+  .table-wrap { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    background: #f4f6fb; padding: 12px 14px; text-align: left;
+    font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase;
+    letter-spacing: 0.05em; border-bottom: 1px solid #e5e9f2;
+  }
+  td { padding: 12px 14px; border-bottom: 1px solid #f4f6fb; font-size: 13px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafbff; }
+  tr.deleted td { opacity: 0.4; text-decoration: line-through; }
+  tr.sold td { background: #fffbeb; }
+
+  .td-photo img { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; }
+  .td-photo .no-photo { width: 48px; height: 48px; background: #f4f6fb; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+
+  .status-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 10px; }
+  .s-active { background: #dcfce7; color: #16a34a; }
+  .s-sold { background: #fef3c7; color: #d97706; }
+  .s-deleted { background: #fee2e2; color: #dc2626; }
+  .s-pending { background: #e0e7ff; color: #3730a3; }
+
+  .action-btns { display: flex; gap: 6px; }
+  .ab {
+    padding: 5px 10px; border-radius: 8px; border: none; cursor: pointer;
+    font-family: 'Nunito', sans-serif; font-size: 11px; font-weight: 700;
+    transition: opacity .2s; white-space: nowrap;
+  }
+  .ab:hover { opacity: 0.8; }
+  .ab-active { background: #dcfce7; color: #16a34a; }
+  .ab-sold { background: #fef3c7; color: #d97706; }
+  .ab-delete { background: #fee2e2; color: #dc2626; }
+  .ab-restore { background: #e0e7ff; color: #3730a3; }
+
+  .loading { text-align: center; padding: 48px; color: #888; }
+  .spinner { width: 32px; height: 32px; border: 3px solid #e5e9f2; border-top-color: #2563eb; border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: #1a1a2e; color: #fff; padding: 12px 20px;
+    border-radius: 12px; font-size: 13px; font-weight: 700;
+    transform: translateY(80px); transition: transform .3s; z-index: 999;
+  }
+  .toast.show { transform: translateY(0); }
+
+  .bulk-bar {
+    background: #2563eb; color: #fff; padding: 12px 18px;
+    border-radius: 12px; margin-bottom: 16px;
+    display: none; align-items: center; justify-content: space-between;
+  }
+  .bulk-bar.show { display: flex; }
+  .bulk-btns { display: flex; gap: 8px; }
+  .bulk-btn {
+    padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.4);
+    background: transparent; color: #fff; font-family: 'Nunito', sans-serif;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+
+  @media (max-width: 768px) {
+    .hide-mobile { display: none; }
+    td, th { padding: 10px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">🐑</div>
+    <div class="login-title">Мал Базар</div>
+    <div class="login-sub">Панель администратора</div>
+    <input type="password" class="login-input" id="pwd-input" placeholder="Введи пароль" onkeydown="if(event.key==='Enter') doLogin()">
+    <button class="login-btn" onclick="doLogin()">Войти</button>
+    <div class="login-error" id="login-error">Неверный пароль</div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div class="admin-panel" id="admin-panel">
+  <div class="topbar">
+    <div class="topbar-logo">🐑 Мал Базар <span class="topbar-badge">ADMIN</span></div>
+    <div class="topbar-right">
+      <span id="topbar-count" style="font-size:12px;opacity:0.7"></span>
+      <button class="topbar-btn" onclick="loadData()">🔄 Обновить</button>
+      <button class="topbar-btn" onclick="logout()">Выйти</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val" id="s-total">—</div><div class="stat-label">Всего объявлений</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-active" style="color:#16a34a">—</div><div class="stat-label">Активных</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-sold" style="color:#d97706">—</div><div class="stat-label">Продано</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-deleted" style="color:#dc2626">—</div><div class="stat-label">Удалённых</div></div>
+      <div class="stat-card"><div class="stat-val" id="s-today" style="color:#7c3aed">—</div><div class="stat-label">Сегодня добавлено</div></div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filter-bar">
+      <input type="text" id="search" placeholder="🔍 Поиск по имени, породе, региону..." oninput="renderTable()">
+      <select id="filter-status" onchange="renderTable()">
+        <option value="all">Все статусы</option>
+        <option value="active">Активные</option>
+        <option value="sold">Проданные</option>
+        <option value="deleted">Удалённые</option>
+      </select>
+      <select id="filter-breed" onchange="renderTable()">
+        <option value="all">Все породы</option>
+        <option>Гиссар</option>
+        <option>Арашан</option>
+        <option>Романов</option>
+        <option>Меринос</option>
+        <option>Коза</option>
+        <option>Корова</option>
+        <option>Лошадь</option>
+      </select>
+      <select id="filter-region" onchange="renderTable()">
+        <option value="all">Все регионы</option>
+        <option>Ош</option>
+        <option>Бишкек</option>
+        <option>Джалал-Абад</option>
+        <option>Нарын</option>
+        <option>Иссык-Куль</option>
+        <option>Чуй</option>
+        <option>Талас</option>
+        <option>Баткен</option>
+      </select>
+      <button class="refresh-btn" onclick="loadData()">Обновить</button>
+    </div>
+
+    <!-- BULK BAR -->
+    <div class="bulk-bar" id="bulk-bar">
+      <span id="bulk-count">Выбрано: 0</span>
+      <div class="bulk-btns">
+        <button class="bulk-btn" onclick="bulkAction('active')">✅ Активировать</button>
+        <button class="bulk-btn" onclick="bulkAction('sold')">🏷 Продано</button>
+        <button class="bulk-btn" onclick="bulkAction('deleted')">🗑 Удалить</button>
+        <button class="bulk-btn" onclick="clearSelection()">✕ Отмена</button>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <div id="table-container">
+        <div class="loading"><div class="spinner"></div>Загружаем данные...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SHEET_ID = '1RR9na3JYMZLxu_pbkgmFT6QK7Y1zRN9TWtNr-U_6t-I';
+const SHEET_NAME = 'Аркуш1';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby5BhCsoW7o1GufvpQigGGrc9HwH-81QoXO42udsmWpzFGQrE-IPDBzhw3vRWMzFAnB/exec';
+const ADMIN_PASSWORD = 'malbazar2024';
+
+let allRows = [];
+let selectedRows = new Set();
+
+// ---- LOGIN ----
+function doLogin() {
+  const pwd = document.getElementById('pwd-input').value;
+  if (pwd === ADMIN_PASSWORD) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    loadData();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('pwd-input').value = '';
+  }
+}
+
+function logout() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('admin-panel').style.display = 'none';
+  document.getElementById('pwd-input').value = '';
+}
+
+// ---- DATA ----
+async function loadData() {
+  document.getElementById('table-container').innerHTML = '<div class="loading"><div class="spinner"></div>Загружаем данные...</div>';
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
+    const res = await fetch(url);
+    const text = await res.text();
+    const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*?)\);/)[1]);
+    const rows = json.table.rows || [];
+
+    allRows = rows.map((row, i) => ({
+      rowIndex: i + 2,
+      name: getVal(row, 0),
+      region: getVal(row, 1),
+      breed: getVal(row, 2),
+      weight: getVal(row, 3),
+      price: getVal(row, 4),
+      phone: getVal(row, 5),
+      photo: getVal(row, 6),
+      date: getVal(row, 7),
+      age: getVal(row, 8),
+      desc: getVal(row, 9),
+      status: getVal(row, 10) || 'active',
+    })).filter(r => r.name || r.breed);
+
+    updateStats();
+    renderTable();
+    document.getElementById('topbar-count').textContent = allRows.length + ' объявлений';
+  } catch(e) {
+    document.getElementById('table-container').innerHTML = '<div class="loading">Ошибка загрузки. Проверь подключение.</div>';
+  }
+}
+
+function getVal(row, idx) {
+  try { return row.c[idx] && row.c[idx].v !== null ? String(row.c[idx].v) : ''; }
+  catch { return ''; }
+}
+
+function updateStats() {
+  const total = allRows.length;
+  const active = allRows.filter(r => r.status === 'active').length;
+  const sold = allRows.filter(r => r.status === 'sold').length;
+  const deleted = allRows.filter(r => r.status === 'deleted').length;
+  const today = new Date().toLocaleDateString('ru-RU').split('.')[0];
+  const todayCount = allRows.filter(r => r.date && r.date.startsWith(today)).length;
+
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-active').textContent = active;
+  document.getElementById('s-sold').textContent = sold;
+  document.getElementById('s-deleted').textContent = deleted;
+  document.getElementById('s-today').textContent = todayCount;
+}
+
+// ---- TABLE ----
+function renderTable() {
+  const search = document.getElementById('search').value.toLowerCase();
+  const statusF = document.getElementById('filter-status').value;
+  const breedF = document.getElementById('filter-breed').value;
+  const regionF = document.getElementById('filter-region').value;
+
+  const filtered = allRows.filter(r => {
+    const matchSearch = !search ||
+      (r.name && r.name.toLowerCase().includes(search)) ||
+      (r.breed && r.breed.toLowerCase().includes(search)) ||
+      (r.region && r.region.toLowerCase().includes(search)) ||
+      (r.phone && r.phone.includes(search));
+    const matchStatus = statusF === 'all' || r.status === statusF;
+    const matchBreed = breedF === 'all' || r.breed === breedF;
+    const matchRegion = regionF === 'all' || (r.region && r.region.includes(regionF));
+    return matchSearch && matchStatus && matchBreed && matchRegion;
+  });
+
+  if (filtered.length === 0) {
+    document.getElementById('table-container').innerHTML = '<div class="loading">Ничего не найдено</div>';
+    return;
+  }
+
+  const statusBadge = s => {
+    const map = { active: ['s-active','✅ Активно'], sold: ['s-sold','🏷 Продано'], deleted: ['s-deleted','🗑 Удалено'], pending: ['s-pending','⏳ Ожидает'] };
+    const [cls, label] = map[s] || ['s-active', s];
+    return `<span class="status-badge ${cls}">${label}</span>`;
+  };
+
+  document.getElementById('table-container').innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th><input type="checkbox" onchange="toggleAll(this)"></th>
+          <th>Фото</th>
+          <th>Фермер</th>
+          <th class="hide-mobile">Порода</th>
+          <th class="hide-mobile">Регион</th>
+          <th>Цена</th>
+          <th class="hide-mobile">Телефон</th>
+          <th class="hide-mobile">Дата</th>
+          <th>Статус</th>
+          <th>Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filtered.map(r => `
+          <tr class="${r.status}" id="tr-${r.rowIndex}">
+            <td><input type="checkbox" onchange="toggleRow(${r.rowIndex}, this)" ${selectedRows.has(r.rowIndex) ? 'checked' : ''}></td>
+            <td class="td-photo">
+              ${r.photo ? `<img src="${r.photo}" alt="фото">` : `<div class="no-photo">🐑</div>`}
+            </td>
+            <td><strong>${r.name || '—'}</strong></td>
+            <td class="hide-mobile">${r.breed || '—'} ${r.age ? '· ' + r.age : ''}</td>
+            <td class="hide-mobile">${r.region || '—'}</td>
+            <td><strong>${r.price ? Number(r.price).toLocaleString('ru-RU') + ' с' : '—'}</strong></td>
+            <td class="hide-mobile"><a href="tel:${r.phone}" style="color:#2563eb;text-decoration:none">${r.phone || '—'}</a></td>
+            <td class="hide-mobile" style="color:#888">${r.date || '—'}</td>
+            <td>${statusBadge(r.status)}</td>
+            <td>
+              <div class="action-btns">
+                ${r.status !== 'active' ? `<button class="ab ab-active" onclick="changeStatus(${r.rowIndex}, 'active')">✅</button>` : ''}
+                ${r.status !== 'sold' ? `<button class="ab ab-sold" onclick="changeStatus(${r.rowIndex}, 'sold')">🏷</button>` : ''}
+                ${r.status !== 'deleted' ? `<button class="ab ab-delete" onclick="changeStatus(${r.rowIndex}, 'deleted')">🗑</button>` : `<button class="ab ab-restore" onclick="changeStatus(${r.rowIndex}, 'active')">↩️</button>`}
+              </div>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+// ---- STATUS CHANGE ----
+async function changeStatus(rowIndex, status) {
+  const row = allRows.find(r => r.rowIndex === rowIndex);
+  if (!row) return;
+
+  const labels = { active: 'активным', sold: 'проданным', deleted: 'удалённым' };
+  showToast('Меняем статус...');
+
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=setStatus&row=${rowIndex}&status=${status}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.status === 'ok') {
+      row.status = status;
+      const tr = document.getElementById('tr-' + rowIndex);
+      if (tr) tr.className = status;
+      updateStats();
+      renderTable();
+      showToast(`✅ Статус изменён на ${labels[status] || status}`);
+    } else {
+      showToast('Ошибка: ' + (data.message || 'неизвестно'));
+    }
+  } catch(e) {
+    showToast('Ошибка соединения');
+  }
+}
+
+// ---- BULK ACTIONS ----
+function toggleRow(rowIndex, cb) {
+  if (cb.checked) selectedRows.add(rowIndex);
+  else selectedRows.delete(rowIndex);
+  updateBulkBar();
+}
+
+function toggleAll(cb) {
+  const checkboxes = document.querySelectorAll('tbody input[type=checkbox]');
+  checkboxes.forEach(box => {
+    box.checked = cb.checked;
+    const ri = parseInt(box.getAttribute('onchange').match(/\d+/)[0]);
+    if (cb.checked) selectedRows.add(ri);
+    else selectedRows.delete(ri);
+  });
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulk-bar');
+  if (selectedRows.size > 0) {
+    bar.classList.add('show');
+    document.getElementById('bulk-count').textContent = `Выбрано: ${selectedRows.size}`;
+  } else {
+    bar.classList.remove('show');
+  }
+}
+
+async function bulkAction(status) {
+  if (!confirm(`Изменить статус на "${status}" для ${selectedRows.size} объявлений?`)) return;
+  showToast('Обрабатываем...');
+  const promises = Array.from(selectedRows).map(ri => changeStatus(ri, status));
+  await Promise.all(promises);
+  clearSelection();
+  showToast(`✅ Обновлено ${selectedRows.size} объявлений`);
+}
+
+function clearSelection() {
+  selectedRows.clear();
+  document.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
+  updateBulkBar();
+}
+
+// ---- TOAST ----
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Enter key on password
+document.getElementById('pwd-input').focus();
+</script>
+</body>
+</html>
