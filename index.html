@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Мал Базар — скот напрямую</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+  :root {
+    --tg-bg:#ffffff;--tg-text:#1a1a2e;--tg-hint:#8a8a9a;--tg-btn:#2563eb;
+    --tg-secondary:#f4f6fb;--tg-border:#e5e9f2;--shadow:0 2px 12px rgba(0,0,0,0.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Nunito',sans-serif;background:var(--tg-bg);color:var(--tg-text);min-height:100vh;overflow-x:hidden}
+  .nav{position:sticky;top:0;z-index:100;background:var(--tg-bg);border-bottom:1px solid var(--tg-border);display:flex;align-items:center;justify-content:space-between;padding:10px 16px}
+  .nav-logo{font-size:17px;font-weight:800;color:var(--tg-btn);display:flex;align-items:center;gap:6px;cursor:pointer}
+  .nav-tabs{display:flex;gap:4px}
+  .nav-tab{font-size:12px;font-weight:700;padding:6px 10px;border-radius:20px;border:none;cursor:pointer;background:transparent;color:var(--tg-hint);transition:all .2s;font-family:'Nunito',sans-serif}
+  .nav-tab.active{background:var(--tg-btn);color:#fff}
+  .page{display:none;padding:16px}
+  .page.active{display:block}
+  .filters{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:16px;scrollbar-width:none}
+  .filters::-webkit-scrollbar{display:none}
+  .filter-btn{flex-shrink:0;font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;border:1.5px solid var(--tg-border);background:var(--tg-bg);color:var(--tg-hint);cursor:pointer;transition:all .2s;font-family:'Nunito',sans-serif}
+  .filter-btn.active{border-color:var(--tg-btn);background:var(--tg-btn);color:#fff}
+  .search-bar{display:flex;align-items:center;gap:10px;background:var(--tg-secondary);border-radius:12px;padding:10px 14px;margin-bottom:16px}
+  .search-bar input{border:none;background:transparent;font-family:'Nunito',sans-serif;font-size:14px;color:var(--tg-text);flex:1;outline:none}
+  .search-bar input::placeholder{color:var(--tg-hint)}
+  .card{background:var(--tg-bg);border:1px solid var(--tg-border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:12px}
+  .card-img{width:100%;height:180px;background:linear-gradient(135deg,#e8f4fd,#d1fae5);display:flex;align-items:center;justify-content:center;font-size:60px;position:relative;overflow:hidden}
+  .card-img img{width:100%;height:100%;object-fit:cover}
+  .card-badge{position:absolute;top:10px;right:10px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,0.95)}
+  .card-body{padding:14px}
+  .card-title{font-size:16px;font-weight:800;margin-bottom:4px}
+  .card-meta{font-size:12px;color:var(--tg-hint);margin-bottom:10px;display:flex;gap:12px;flex-wrap:wrap}
+  .card-price{font-size:20px;font-weight:800;color:var(--tg-btn);margin-bottom:12px}
+  .card-price small{font-size:13px;color:var(--tg-hint);font-weight:600}
+  .card-footer{display:flex;gap:8px}
+  .btn-call{flex:1;padding:10px;border-radius:12px;border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;background:var(--tg-btn);color:#fff}
+  .btn-share{padding:10px 14px;border-radius:12px;border:1.5px solid var(--tg-border);background:transparent;cursor:pointer;font-size:16px}
+  .form-header{text-align:center;padding:10px 0 20px}
+  .form-header h2{font-size:20px;font-weight:800;margin-bottom:4px}
+  .form-header p{font-size:13px;color:var(--tg-hint)}
+  .form-section{margin-bottom:20px}
+  .form-section-title{font-size:11px;font-weight:800;color:var(--tg-hint);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px}
+  .field{margin-bottom:12px}
+  .field label{font-size:13px;font-weight:700;display:block;margin-bottom:5px}
+  .field input,.field select,.field textarea{width:100%;padding:12px 14px;border:1.5px solid var(--tg-border);border-radius:12px;font-family:'Nunito',sans-serif;font-size:14px;color:var(--tg-text);background:var(--tg-bg);outline:none;transition:border-color .2s;-webkit-appearance:none}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--tg-btn)}
+  .field textarea{resize:none;height:80px}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .photo-upload{border:2px dashed var(--tg-border);border-radius:12px;padding:24px;text-align:center;cursor:pointer;position:relative}
+  .photo-upload input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+  .photo-upload-icon{font-size:32px;margin-bottom:6px}
+  .photo-upload-text{font-size:13px;color:var(--tg-hint);font-weight:600}
+  .photo-preview{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .photo-preview img{width:72px;height:72px;object-fit:cover;border-radius:8px}
+  .breed-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .breed-btn{padding:10px 6px;border-radius:12px;border:1.5px solid var(--tg-border);background:var(--tg-bg);cursor:pointer;text-align:center;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:var(--tg-hint);transition:all .2s}
+  .breed-btn.active{border-color:var(--tg-btn);background:#eff6ff;color:var(--tg-btn)}
+  .breed-btn-icon{font-size:20px;display:block;margin-bottom:3px}
+  .region-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .region-btn{padding:10px;border-radius:12px;border:1.5px solid var(--tg-border);background:var(--tg-bg);cursor:pointer;text-align:left;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:var(--tg-hint);transition:all .2s}
+  .region-btn.active{border-color:var(--tg-btn);background:#eff6ff;color:var(--tg-btn)}
+  .submit-btn{width:100%;padding:16px;border-radius:16px;border:none;background:var(--tg-btn);color:#fff;font-family:'Nunito',sans-serif;font-size:16px;font-weight:800;cursor:pointer;margin-top:8px}
+  .submit-btn:disabled{opacity:0.5;cursor:not-allowed}
+  .success-screen{display:none;text-align:center;padding:40px 20px}
+  .success-screen.show{display:block}
+  .success-icon{font-size:64px;margin-bottom:16px}
+  .success-screen h2{font-size:22px;font-weight:800;margin-bottom:8px}
+  .success-screen p{font-size:14px;color:var(--tg-hint);margin-bottom:24px}
+  .success-btn{padding:14px 28px;border-radius:14px;border:none;background:var(--tg-btn);color:#fff;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;cursor:pointer;margin:4px}
+  .empty{text-align:center;padding:48px 20px;color:var(--tg-hint)}
+  .empty-icon{font-size:48px;margin-bottom:12px}
+  .empty p{font-size:14px;font-weight:600}
+  .loading{text-align:center;padding:40px;color:var(--tg-hint)}
+  .spinner{width:32px;height:32px;border:3px solid var(--tg-border);border-top-color:var(--tg-btn);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .stats-bar{display:flex;gap:8px;margin-bottom:16px}
+  .range-filters{background:var(--tg-secondary);border-radius:14px;padding:14px;margin-bottom:16px}
+  .range-row{margin-bottom:10px}
+  .range-row:last-child{margin-bottom:0}
+  .range-label{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;margin-bottom:6px}
+  .range-label span{color:var(--tg-btn)}
+  .range-slider{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:2px;background:var(--tg-border);outline:none}
+  .range-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:var(--tg-btn);cursor:pointer}
+  .range-slider::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--tg-btn);cursor:pointer;border:none}
+  .range-toggle{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:10px;color:var(--tg-hint)}
+  .range-toggle.open{color:var(--tg-btn)}
+  .stat-chip{flex:1;background:var(--tg-secondary);border-radius:10px;padding:8px;text-align:center}
+  .stat-chip-val{font-size:18px;font-weight:800;color:var(--tg-btn)}
+  .stat-chip-label{font-size:10px;color:var(--tg-hint);font-weight:700;margin-top:2px}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:12px 20px;border-radius:30px;font-size:13px;font-weight:700;transition:transform .3s;z-index:999;white-space:nowrap}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .phone-saved{font-size:11px;color:var(--tg-hint);margin-top:4px;cursor:pointer}
+  .my-actions{display:flex;gap:8px;margin-top:10px}
+  .my-btn{flex:1;padding:9px;border-radius:12px;border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700}
+  .my-btn-sold{background:#fef3c7;color:#d97706}
+  .my-btn-active{background:#dcfce7;color:#16a34a}
+  .my-btn-delete{background:#fee2e2;color:#dc2626;max-width:48px}
+  .sub-btn{width:100%;padding:10px;border-radius:12px;border:1.5px solid var(--tg-border);background:transparent;cursor:pointer;font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--tg-hint);margin-top:8px;transition:all .2s}
+  .sub-btn.subscribed{background:#eff6ff;color:var(--tg-btn);border-color:var(--tg-btn)}
+  .sub-panel{background:var(--tg-secondary);border-radius:14px;padding:14px;margin-bottom:16px}
+  .sub-panel h3{font-size:14px;font-weight:800;margin-bottom:4px}
+  .sub-panel p{font-size:12px;color:var(--tg-hint);margin-bottom:12px}
+  .sub-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
+  .sub-chip{padding:8px;border-radius:10px;border:1.5px solid var(--tg-border);background:var(--tg-bg);cursor:pointer;text-align:center;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:var(--tg-hint);transition:all .2s}
+  .sub-chip.active{border-color:var(--tg-btn);background:#eff6ff;color:var(--tg-btn)}
+  .view-count{font-size:11px;color:var(--tg-hint);font-weight:700;margin-top:6px;display:flex;align-items:center;gap:4px}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-logo" onclick="handleLogoClick()"><span>🐑</span> Мал Базар</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('catalog')">Каталог</button>
+    <button class="nav-tab" onclick="showPage('my')">Мои</button>
+    <button class="nav-tab" onclick="showPage('sub')">🔔</button>
+    <button class="nav-tab" onclick="showPage('add')">+ Продать</button>
+  </div>
+</div>
+
+<!-- КАТАЛОГ -->
+<div class="page active" id="page-catalog">
+  <div class="stats-bar">
+    <div class="stat-chip"><div class="stat-chip-val" id="stat-total">—</div><div class="stat-chip-label">объявлений</div></div>
+    <div class="stat-chip"><div class="stat-chip-val" id="stat-regions">—</div><div class="stat-chip-label">регионов</div></div>
+    <div class="stat-chip"><div class="stat-chip-val" id="stat-today">—</div><div class="stat-chip-label">сегодня</div></div>
+  </div>
+  <div class="search-bar">
+    <span>🔍</span>
+    <input type="text" placeholder="Порода, район, цена..." id="search-input" oninput="filterListings()">
+  </div>
+  <div class="range-toggle" id="range-toggle" onclick="toggleRangeFilters()">
+    ⚙️ Фильтр по цене и весу <span id="range-arrow">▼</span>
+  </div>
+  <div class="range-filters" id="range-filters" style="display:none">
+    <div class="range-row">
+      <div class="range-label">
+        <span>💰 Цена до:</span>
+        <span id="price-val">любая</span>
+      </div>
+      <input type="range" class="range-slider" id="price-slider" min="0" max="500000" step="1000" value="500000" oninput="updateRangeFilters()">
+    </div>
+    <div class="range-row">
+      <div class="range-label">
+        <span>⚖️ Вес от:</span>
+        <span id="weight-val">любой</span>
+      </div>
+      <input type="range" class="range-slider" id="weight-slider" min="0" max="500" step="5" value="0" oninput="updateRangeFilters()">
+    </div>
+  </div>
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('all',this)">Все</button>
+    <button class="filter-btn" onclick="setFilter('Гиссар',this)">Гиссар</button>
+    <button class="filter-btn" onclick="setFilter('Арашан',this)">Арашан</button>
+    <button class="filter-btn" onclick="setFilter('Романов',this)">Романов</button>
+    <button class="filter-btn" onclick="setFilter('Меринос',this)">Меринос</button>
+    <button class="filter-btn" onclick="setFilter('Коза',this)">Коза</button>
+    <button class="filter-btn" onclick="setFilter('Корова',this)">Корова</button>
+    <button class="filter-btn" onclick="setFilter('Лошадь',this)">Лошадь</button>
+  </div>
+  <div id="listings-container"><div class="loading"><div class="spinner"></div>Загружаем объявления...</div></div>
+</div>
+
+<!-- МОИ ОБЪЯВЛЕНИЯ -->
+<div class="page" id="page-my">
+  <div class="form-header">
+    <h2>Мои объявления</h2>
+    <p id="my-subtitle">Загружаем...</p>
+  </div>
+  <div id="my-container"><div class="loading"><div class="spinner"></div>Загружаем...</div></div>
+</div>
+
+<!-- ПОДПИСКИ -->
+<div class="page" id="page-sub">
+  <div class="form-header">
+    <h2>🔔 Уведомления</h2>
+    <p>Получай уведомление когда появится нужный скот</p>
+  </div>
+  <div class="sub-panel">
+    <h3>Выбери породу</h3>
+    <p>Мы пришлём уведомление как только появится новое объявление</p>
+    <div class="sub-grid">
+      <button class="sub-chip" onclick="toggleSubBreed('Гиссар',this)">🐑 Гиссар</button>
+      <button class="sub-chip" onclick="toggleSubBreed('Арашан',this)">🐑 Арашан</button>
+      <button class="sub-chip" onclick="toggleSubBreed('Романов',this)">🐑 Романов</button>
+      <button class="sub-chip" onclick="toggleSubBreed('Меринос',this)">🐑 Меринос</button>
+      <button class="sub-chip" onclick="toggleSubBreed('Коза',this)">🐐 Коза</button>
+      <button class="sub-chip" onclick="toggleSubBreed('Корова',this)">🐄 Корова</button>
+      <button class="sub-chip" onclick="toggleSubBreed('Лошадь',this)">🐎 Лошадь</button>
+      <button class="sub-chip" onclick="toggleSubBreed('Все',this)">🐾 Все</button>
+    </div>
+    <h3 style="margin-bottom:4px;margin-top:4px">Выбери регион</h3>
+    <div class="sub-grid">
+      <button class="sub-chip" onclick="toggleSubRegion('Все',this)">🇰🇬 Весь КР</button>
+      <button class="sub-chip" onclick="toggleSubRegion('Ош',this)">📍 Ош</button>
+      <button class="sub-chip" onclick="toggleSubRegion('Бишкек',this)">📍 Бишкек</button>
+      <button class="sub-chip" onclick="toggleSubRegion('Джалал-Абад',this)">📍 Джалал-Абад</button>
+      <button class="sub-chip" onclick="toggleSubRegion('Нарын',this)">📍 Нарын</button>
+      <button class="sub-chip" onclick="toggleSubRegion('Иссык-Куль',this)">📍 Иссык-Куль</button>
+    </div>
+    <button class="submit-btn" id="sub-btn" onclick="saveSubscription()" style="margin-top:12px">🔔 Подписаться</button>
+  </div>
+  <div id="my-subs-container"></div>
+</div>
+
+<!-- ДОБАВИТЬ -->
+<div class="page" id="page-add">
+  <div id="form-container">
+    <div class="form-header">
+      <h2>Продать скот</h2>
+      <p>Заполни форму — объявление появится сразу</p>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">Вид животного</div>
+      <div class="breed-grid">
+        <button class="breed-btn" onclick="selectBreed('Гиссар',this)"><span class="breed-btn-icon">🐑</span>Гиссар</button>
+        <button class="breed-btn" onclick="selectBreed('Арашан',this)"><span class="breed-btn-icon">🐑</span>Арашан</button>
+        <button class="breed-btn" onclick="selectBreed('Романов',this)"><span class="breed-btn-icon">🐑</span>Романов</button>
+        <button class="breed-btn" onclick="selectBreed('Меринос',this)"><span class="breed-btn-icon">🐑</span>Меринос</button>
+        <button class="breed-btn" onclick="selectBreed('Коза',this)"><span class="breed-btn-icon">🐐</span>Коза</button>
+        <button class="breed-btn" onclick="selectBreed('Корова',this)"><span class="breed-btn-icon">🐄</span>Корова</button>
+        <button class="breed-btn" onclick="selectBreed('Лошадь',this)"><span class="breed-btn-icon">🐎</span>Лошадь</button>
+        <button class="breed-btn" onclick="selectBreed('Другое',this)"><span class="breed-btn-icon">🐾</span>Другое</button>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">Детали</div>
+      <div class="field-row">
+        <div class="field"><label>Вес (кг)</label><input type="number" id="f-weight" placeholder="65"></div>
+        <div class="field"><label>Возраст</label><input type="text" id="f-age" placeholder="2 года"></div>
+      </div>
+      <div class="field"><label>Цена (сом)</label><input type="number" id="f-price" placeholder="18000"></div>
+      <div class="field"><label>Описание</label><textarea id="f-desc" placeholder="Откормленный, здоровый..."></textarea></div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">Регион</div>
+      <div class="region-grid">
+        <button class="region-btn" onclick="selectRegion('Ош',this)">📍 Ош</button>
+        <button class="region-btn" onclick="selectRegion('Бишкек',this)">📍 Бишкек</button>
+        <button class="region-btn" onclick="selectRegion('Джалал-Абад',this)">📍 Джалал-Абад</button>
+        <button class="region-btn" onclick="selectRegion('Нарын',this)">📍 Нарын</button>
+        <button class="region-btn" onclick="selectRegion('Иссык-Куль',this)">📍 Иссык-Куль</button>
+        <button class="region-btn" onclick="selectRegion('Чуй',this)">📍 Чуй</button>
+        <button class="region-btn" onclick="selectRegion('Талас',this)">📍 Талас</button>
+        <button class="region-btn" onclick="selectRegion('Баткен',this)">📍 Баткен</button>
+      </div>
+      <div class="field" style="margin-top:10px"><label>Район/село</label><input type="text" id="f-district" placeholder="Узген, Кара-Суу..."></div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">Контакт</div>
+      <div class="field">
+        <label>Ваше имя</label>
+        <input type="text" id="f-name" placeholder="Эрмек">
+        <div class="phone-saved" id="name-hint"></div>
+      </div>
+      <div class="field">
+        <label>Номер телефона</label>
+        <input type="tel" id="f-phone" placeholder="+996 700 123 456" onchange="savePhone()">
+        <div class="phone-saved" id="phone-hint"></div>
+      </div>
+    </div>
+    <div class="form-section">
+      <div class="form-section-title">Фото (необязательно)</div>
+      <div class="photo-upload" id="photo-upload-area">
+        <input type="file" accept="image/*" onchange="handlePhotos(this)">
+        <div class="photo-upload-icon">📷</div>
+        <div class="photo-upload-text">Нажми чтобы добавить фото</div>
+      </div>
+      <div class="photo-preview" id="photo-preview"></div>
+    </div>
+    <button class="submit-btn" id="submit-btn" onclick="submitListing()">Опубликовать объявление 🚀</button>
+    <div style="height:24px"></div>
+  </div>
+  <div class="success-screen" id="success-screen">
+    <div class="success-icon">🎉</div>
+    <h2>Объявление опубликовано!</h2>
+    <p>Оно уже видно всем покупателям и в канале @mal_bazar11</p>
+    <button class="success-btn" onclick="backToForm()">Добавить ещё</button>
+    <button class="success-btn" style="background:var(--tg-secondary);color:var(--tg-text);" onclick="showPage('catalog')">Смотреть каталог</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SHEET_ID = '1RR9na3JYMZLxu_pbkgmFT6QK7Y1zRN9TWtNr-U_6t-I';
+const SHEET_NAME = 'Аркуш1';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby5BhCsoW7o1GufvpQigGGrc9HwH-81QoXO42udsmWpzFGQrE-IPDBzhw3vRWMzFAnB/exec';
+const CLOUDINARY_CLOUD = 'ddan5i7em';
+const CLOUDINARY_PRESET = 'malbazar';
+const ADMIN_PASSWORD = 'malbazar2024';
+
+let allListings = [], activeFilter = 'all', selectedBreed = '', selectedRegion = '';
+let uploadedPhotoUrl = '', isSubmitting = false;
+
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+// ---- NAV ----
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const tabs = document.querySelectorAll('.nav-tab');
+  if (page === 'catalog') { tabs[0].classList.add('active'); loadListings(); }
+  else if (page === 'my') { tabs[1].classList.add('active'); loadMyListings(); }
+  else if (page === 'sub') { tabs[2].classList.add('active'); }
+  else { tabs[3].classList.add('active'); autofillContact(); }
+}
+
+// ---- HELPERS ----
+function getV(row, idx) {
+  try { return row.c[idx] && row.c[idx].v !== null ? String(row.c[idx].v) : ''; } catch { return ''; }
+}
+
+async function fetchSheet() {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}&t=${Date.now()}`;
+  const res = await fetch(url);
+  const text = await res.text();
+  const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*?)\);/)[1]);
+  return (json.table.rows || []).map((row, i) => ({
+    rowIndex: i + 2,
+    name: getV(row,0), region: getV(row,1), breed: getV(row,2),
+    weight: getV(row,3), price: getV(row,4), phone: getV(row,5),
+    photo: getV(row,6), date: getV(row,7), age: getV(row,8),
+    desc: getV(row,9), status: getV(row,10) || 'active',
+  })).filter(r => r.name || r.breed);
+}
+
+const EMOJI = {'Гиссар':'🐑','Арашан':'🐑','Романов':'🐑','Меринос':'🐑','Коза':'🐐','Корова':'🐄','Лошадь':'🐎'};
+
+// ---- CATALOG ----
+async function loadListings() {
+  const c = document.getElementById('listings-container');
+  c.innerHTML = '<div class="loading"><div class="spinner"></div>Загружаем объявления...</div>';
+  try {
+    const rows = await fetchSheet();
+    allListings = rows.filter(r => r.status !== 'deleted');
+    const regions = new Set(allListings.map(l => l.region).filter(Boolean));
+    document.getElementById('stat-total').textContent = allListings.length;
+    document.getElementById('stat-regions').textContent = regions.size;
+    document.getElementById('stat-today').textContent = allListings.length;
+    renderListings();
+  } catch(e) {
+    c.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>Объявлений пока нет.<br>Будь первым!</p></div>';
+  }
+}
+
+function setFilter(val, btn) {
+  activeFilter = val;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderListings();
+}
+
+function filterListings() { renderListings(); }
+
+function toggleRangeFilters() {
+  const panel = document.getElementById('range-filters');
+  const toggle = document.getElementById('range-toggle');
+  const arrow = document.getElementById('range-arrow');
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+  toggle.classList.toggle('open', !isOpen);
+  arrow.textContent = isOpen ? '▼' : '▲';
+}
+
+function updateRangeFilters() {
+  const priceVal = parseInt(document.getElementById('price-slider').value);
+  const weightVal = parseInt(document.getElementById('weight-slider').value);
+  document.getElementById('price-val').textContent = priceVal >= 500000 ? 'любая' : Number(priceVal).toLocaleString('ru-RU') + ' сом';
+  document.getElementById('weight-val').textContent = weightVal <= 0 ? 'любой' : weightVal + ' кг+';
+  renderListings();
+}
+
+function renderListings() {
+  const c = document.getElementById('listings-container');
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const maxPrice = parseInt(document.getElementById('price-slider').value);
+  const minWeight = parseInt(document.getElementById('weight-slider').value);
+  const filtered = allListings.filter(l => {
+    const mF = activeFilter === 'all' || (l.breed && l.breed.toLowerCase().includes(activeFilter.toLowerCase()));
+    const mS = !search || [l.breed,l.region,l.name,l.price].some(v => v && v.toLowerCase().includes(search));
+    const mP = maxPrice >= 500000 || !l.price || Number(l.price) <= maxPrice;
+    const mW = minWeight <= 0 || !l.weight || Number(l.weight) >= minWeight;
+    return mF && mS && mP && mW;
+  });
+  if (!filtered.length) { c.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><p>Ничего не найдено</p></div>'; return; }
+  c.innerHTML = filtered.map(l => `
+    <div class="card">
+      <div class="card-img">
+        ${l.photo ? `<img src="${l.photo}" alt="фото">` : `<span style="font-size:64px">${EMOJI[l.breed]||'🐾'}</span>`}
+        <div class="card-badge" style="color:${l.status==='sold'?'#d97706':'#16a34a'}">${l.status==='sold'?'🏷 Продано':'✓ Прямой контакт'}</div>
+      </div>
+      <div class="card-body">
+        <div class="card-title">${l.breed||'Животное'} ${l.age?'· '+l.age:''}</div>
+        <div class="card-meta">
+          ${l.region?`<span>📍 ${l.region}</span>`:''}
+          ${l.weight?`<span>⚖️ ${l.weight} кг</span>`:''}
+          ${l.name?`<span>👤 ${l.name}</span>`:''}
+        </div>
+        <div class="card-price">${l.price?Number(l.price).toLocaleString('ru-RU')+' сом':'Договорная'} <small>/ голова</small></div>
+        <div class="card-footer">
+          <button class="btn-call" onclick="callFarmer('${l.phone}','${l.rowIndex}')" ${l.status==='sold'?'disabled style="opacity:0.5"':''}>📞 Позвонить фермеру</button>
+          <button class="btn-share" onclick="shareCard('${l.breed}','${l.price}','${l.region}')">↗</button>
+        </div>
+        <div class="view-count">👁 <span id="views-${l.rowIndex}">—</span> просмотров · 📞 <span id="calls-${l.rowIndex}">—</span> звонков</div>
+      </div>
+    </div>`).join('');
+  loadViewStats(filtered);
+}
+
+function callFarmer(phone, rowIndex) {
+  if (!phone) { showToast('Номер не указан'); return; }
+  // Track call
+  if (rowIndex) {
+    fetch(`${APPS_SCRIPT_URL}?action=trackCall&row=${rowIndex}`).catch(()=>{});
+  }
+  window.location.href = 'tel:' + phone.replace(/\s/g,'');
+}
+
+function shareCard(breed, price, region) {
+  const text = `🐑 ${breed} — ${Number(price).toLocaleString('ru-RU')} сом\n📍 ${region}\n\n@mal_bazar11`;
+  if (navigator.clipboard) { navigator.clipboard.writeText(text); showToast('Скопировано!'); }
+}
+
+// ---- МОИ ОБЪЯВЛЕНИЯ ----
+async function loadMyListings() {
+  const c = document.getElementById('my-container');
+  const sub = document.getElementById('my-subtitle');
+  c.innerHTML = '<div class="loading"><div class="spinner"></div>Загружаем...</div>';
+
+  const tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+  const tgName = tgUser ? [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ') : '';
+  const savedPhone = await getStoredPhone();
+
+  if (!tgName && !savedPhone) {
+    sub.textContent = '';
+    c.innerHTML = '<div class="empty"><div class="empty-icon">👤</div><p>Добавь первое объявление<br>— оно появится здесь</p></div>';
+    return;
+  }
+
+  try {
+    const rows = await fetchSheet();
+    const mine = rows.filter(r => {
+      const mN = tgName && r.name && r.name.toLowerCase() === tgName.toLowerCase();
+      const mP = savedPhone && r.phone && r.phone.replace(/\D/g,'') === savedPhone.replace(/\D/g,'');
+      return (mN || mP) && r.status !== 'deleted';
+    });
+
+    sub.textContent = mine.length ? `У вас ${mine.length} объявлений` : 'Нет активных объявлений';
+
+    if (!mine.length) {
+      c.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>У вас пока нет объявлений.<br>Нажми "+ Продать"</p></div>';
+      return;
+    }
+
+    c.innerHTML = mine.map(l => `
+      <div class="card" id="my-${l.rowIndex}">
+        <div class="card-img">
+          ${l.photo ? `<img src="${l.photo}" alt="фото">` : `<span style="font-size:64px">${EMOJI[l.breed]||'🐾'}</span>`}
+          <div class="card-badge" style="color:${l.status==='sold'?'#d97706':'#16a34a'}">${l.status==='sold'?'🏷 Продано':'✅ Активно'}</div>
+        </div>
+        <div class="card-body">
+          <div class="card-title">${l.breed||'Животное'} ${l.age?'· '+l.age:''}</div>
+          <div class="card-meta">
+            ${l.region?`<span>📍 ${l.region}</span>`:''}
+            ${l.weight?`<span>⚖️ ${l.weight} кг</span>`:''}
+            ${l.date?`<span>📅 ${l.date}</span>`:''}
+          </div>
+          <div class="card-price">${l.price?Number(l.price).toLocaleString('ru-RU')+' сом':'Договорная'}</div>
+          <div class="my-actions">
+            ${l.status!=='sold'
+              ? `<button class="my-btn my-btn-sold" onclick="myStatus(${l.rowIndex},'sold',this)">🏷 Продано</button>`
+              : `<button class="my-btn my-btn-active" onclick="myStatus(${l.rowIndex},'active',this)">✅ Активировать</button>`}
+            <button class="my-btn my-btn-delete" onclick="myDelete(${l.rowIndex},this)">🗑</button>
+          </div>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    c.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p>Ошибка загрузки</p></div>';
+  }
+}
+
+async function getStoredPhone() {
+  return new Promise(resolve => {
+    if (tg && tg.CloudStorage) {
+      tg.CloudStorage.getItem('mb_phone', (err, val) => resolve((!err && val) ? val : sessionStorage.getItem('mb_phone') || ''));
+    } else resolve(sessionStorage.getItem('mb_phone') || '');
+  });
+}
+
+async function myStatus(rowIndex, status, btn) {
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    await fetch(`${APPS_SCRIPT_URL}?action=setStatus&row=${rowIndex}&status=${status}`);
+    showToast(status === 'sold' ? '🏷 Отмечено как продано' : '✅ Активировано');
+    setTimeout(() => loadMyListings(), 1500);
+  } catch(e) { showToast('Ошибка'); btn.disabled = false; }
+}
+
+async function myDelete(rowIndex, btn) {
+  if (!confirm('Удалить объявление?')) return;
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    await fetch(`${APPS_SCRIPT_URL}?action=setStatus&row=${rowIndex}&status=deleted`);
+    document.getElementById('my-' + rowIndex).style.display = 'none';
+    showToast('🗑 Удалено');
+  } catch(e) { showToast('Ошибка'); btn.disabled = false; }
+}
+
+// ---- ФОРМА ----
+function selectBreed(b, btn) {
+  selectedBreed = b;
+  document.querySelectorAll('.breed-btn').forEach(x => x.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function selectRegion(r, btn) {
+  selectedRegion = r;
+  document.querySelectorAll('.region-btn').forEach(x => x.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function autofillContact() {
+  const tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+  if (tgUser) {
+    const n = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ');
+    if (n) { document.getElementById('f-name').value = n; document.getElementById('name-hint').textContent = '✓ Имя из Telegram'; }
+  }
+  const ph = document.getElementById('f-phone');
+  const hint = document.getElementById('phone-hint');
+  function applyPhone(p) {
+    ph.value = p; hint.textContent = '✓ Сохранён · нажми чтобы изменить';
+    hint.onclick = () => { ph.value=''; hint.textContent=''; hint.onclick=null; if(tg&&tg.CloudStorage) tg.CloudStorage.removeItem('mb_phone'); sessionStorage.removeItem('mb_phone'); };
+  }
+  if (tg && tg.CloudStorage) {
+    tg.CloudStorage.getItem('mb_phone', (err, val) => { if (!err && val) applyPhone(val); else { const s=sessionStorage.getItem('mb_phone'); if(s) applyPhone(s); } });
+  } else { const s=sessionStorage.getItem('mb_phone'); if(s) applyPhone(s); }
+}
+
+function savePhone() {
+  const p = document.getElementById('f-phone').value.trim();
+  if (!p) return;
+  if (tg && tg.CloudStorage) tg.CloudStorage.setItem('mb_phone', p);
+  sessionStorage.setItem('mb_phone', p);
+  document.getElementById('phone-hint').textContent = '✓ Номер сохранён';
+}
+
+async function handlePhotos(input) {
+  const preview = document.getElementById('photo-preview');
+  preview.innerHTML = ''; uploadedPhotoUrl = '';
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => { const img = document.createElement('img'); img.src = e.target.result; preview.appendChild(img); };
+  reader.readAsDataURL(file);
+  const area = document.getElementById('photo-upload-area');
+  area.querySelector('.photo-upload-text').textContent = 'Загружаем фото...';
+  try {
+    const fd = new FormData(); fd.append('file', file); fd.append('upload_preset', CLOUDINARY_PRESET);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {method:'POST',body:fd});
+    const data = await res.json();
+    uploadedPhotoUrl = data.secure_url || '';
+    area.querySelector('.photo-upload-text').textContent = '✅ Фото загружено!';
+  } catch(e) {
+    area.querySelector('.photo-upload-text').textContent = 'Нажми чтобы добавить фото';
+    showToast('Ошибка загрузки фото');
+  }
+}
+
+async function submitListing() {
+  if (isSubmitting) return;
+  const price = document.getElementById('f-price').value;
+  const name = document.getElementById('f-name').value;
+  const phone = document.getElementById('f-phone').value;
+  if (!selectedBreed) { showToast('Выбери вид животного'); return; }
+  if (!price) { showToast('Укажи цену'); return; }
+  if (!selectedRegion) { showToast('Выбери регион'); return; }
+  if (!name) { showToast('Укажи своё имя'); return; }
+  if (!phone) { showToast('Укажи телефон'); return; }
+  const uploadText = document.querySelector('.photo-upload-text');
+  if (uploadText && uploadText.textContent === 'Загружаем фото...') { showToast('Подожди — фото загружается...'); return; }
+  isSubmitting = true;
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Публикуем...';
+  savePhone();
+  const data = {
+    name, region: selectedRegion, breed: selectedBreed,
+    weight: document.getElementById('f-weight').value,
+    price, phone, photo: uploadedPhotoUrl,
+    date: new Date().toLocaleDateString('ru-RU'),
+    age: document.getElementById('f-age').value,
+    desc: document.getElementById('f-desc').value,
+    district: document.getElementById('f-district').value
+  };
+  const params = new URLSearchParams();
+  Object.keys(data).forEach(k => params.append(k, data[k]));
+  await new Promise(resolve => {
+    const img = new Image();
+    img.onload = img.onerror = resolve;
+    img.src = APPS_SCRIPT_URL + '?' + params.toString();
+    setTimeout(resolve, 2500);
+  });
+  btn.disabled = false; btn.textContent = 'Опубликовать объявление 🚀';
+  isSubmitting = false; uploadedPhotoUrl = '';
+  document.getElementById('form-container').style.display = 'none';
+  document.getElementById('success-screen').classList.add('show');
+}
+
+function backToForm() {
+  document.getElementById('form-container').style.display = 'block';
+  document.getElementById('success-screen').classList.remove('show');
+  selectedBreed = ''; selectedRegion = '';
+  document.querySelectorAll('.breed-btn,.region-btn').forEach(b => b.classList.remove('active'));
+  ['f-weight','f-price','f-district','f-age','f-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('photo-preview').innerHTML = '';
+  document.querySelector('.photo-upload-text').textContent = 'Нажми чтобы добавить фото';
+}
+
+// ---- СЕКРЕТНЫЙ ВХОД ----
+let logoTaps = 0, logoTimer;
+function handleLogoClick() {
+  logoTaps++; clearTimeout(logoTimer);
+  logoTimer = setTimeout(() => logoTaps = 0, 2000);
+  if (logoTaps >= 5) {
+    logoTaps = 0;
+    const p = prompt('Пароль администратора:');
+    if (p === ADMIN_PASSWORD) {
+      showToast('👑 Режим администратора');
+      window.open('https://ermeko79-afk.github.io/malbazar/admin.html', '_blank');
+    }
+  }
+}
+
+// ---- СТАТИСТИКА ----
+async function loadViewStats(listings) {
+  // Track views for visible listings
+  listings.forEach(l => {
+    if (l.views !== undefined) {
+      const el = document.getElementById('views-' + l.rowIndex);
+      const cel = document.getElementById('calls-' + l.rowIndex);
+      if (el) el.textContent = l.views || '0';
+      if (cel) cel.textContent = l.calls || '0';
+    } else {
+      const el = document.getElementById('views-' + l.rowIndex);
+      const cel = document.getElementById('calls-' + l.rowIndex);
+      if (el) el.textContent = '0';
+      if (cel) cel.textContent = '0';
+    }
+  });
+
+  // Load stats from sheet
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('Статистика')}&t=${Date.now()}`;
+    const res = await fetch(url);
+    const text = await res.text();
+    const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*?)\);/)[1]);
+    const rows = json.table.rows || [];
+    rows.forEach(row => {
+      const rowIndex = getV(row, 0);
+      const views = getV(row, 1);
+      const calls = getV(row, 2);
+      const el = document.getElementById('views-' + rowIndex);
+      const cel = document.getElementById('calls-' + rowIndex);
+      if (el) el.textContent = views || '0';
+      if (cel) cel.textContent = calls || '0';
+    });
+  } catch(e) {}
+}
+
+// ---- ПОДПИСКИ ----
+let subBreed = '', subRegion = 'Все';
+
+function toggleSubBreed(breed, btn) {
+  subBreed = breed;
+  document.querySelectorAll('.sub-grid .sub-chip').forEach(b => {
+    if (b.textContent.includes(breed) && b.getAttribute('onclick').includes('Breed')) b.classList.add('active');
+    else if (b.getAttribute('onclick').includes('Breed')) b.classList.remove('active');
+  });
+}
+
+function toggleSubRegion(region, btn) {
+  subRegion = region;
+  document.querySelectorAll('.sub-grid .sub-chip').forEach(b => {
+    if (b.textContent.includes(region) && b.getAttribute('onclick').includes('Region')) b.classList.add('active');
+    else if (b.getAttribute('onclick').includes('Region')) b.classList.remove('active');
+  });
+}
+
+async function saveSubscription() {
+  if (!subBreed) { showToast('Выбери породу'); return; }
+  const tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+  if (!tgUser || !tgUser.id) {
+    showToast('Открой через Telegram бота');
+    return;
+  }
+  const btn = document.getElementById('sub-btn');
+  btn.disabled = true; btn.textContent = 'Подписываем...';
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=subscribe&chatId=${tgUser.id}&breed=${encodeURIComponent(subBreed)}&region=${encodeURIComponent(subRegion)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.status === 'exists') {
+      showToast('Ты уже подписан на ' + subBreed);
+    } else {
+      showToast('✅ Подписка оформлена на ' + subBreed);
+    }
+  } catch(e) {
+    showToast('Ошибка. Попробуй ещё раз.');
+  }
+  btn.disabled = false; btn.textContent = '🔔 Подписаться';
+}
+
+async function unsubscribeAll() {
+  const tgUser = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+  if (!tgUser || !tgUser.id) return;
+  if (!confirm('Отменить все подписки?')) return;
+  try {
+    await fetch(`${APPS_SCRIPT_URL}?action=unsubscribe&chatId=${tgUser.id}`);
+    showToast('Все подписки отменены');
+  } catch(e) { showToast('Ошибка'); }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+loadListings();
+</script>
+</body>
+</html>
